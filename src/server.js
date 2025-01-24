@@ -3,6 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+// Import routes
+const memeRoutes = require('./routes/memeRoutes');
+
 const app = express();
 const PORT = process.env.PORT || 4001;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/dapp';
@@ -17,9 +20,7 @@ mongoose.connect(MONGO_URI)
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
-app.get('/', (req, res) => {
-    res.send('Hello, DApp World!');
-});
+app.use('/api/memes', memeRoutes);
 
 // Start server
 app.listen(PORT, () => {
