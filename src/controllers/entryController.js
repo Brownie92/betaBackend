@@ -18,6 +18,12 @@ const registerWallet = async (req, res) => {
       return res.status(400).json({ message: 'Wallet already registered' });
     }
 
+    // Validate that the chosen meme exists in the race
+    const validMeme = race.memes.find((meme) => meme.name === chosenMeme);
+    if (!validMeme) {
+      return res.status(400).json({ message: `Invalid meme selection: ${chosenMeme}` });
+    }
+
     // Create a new participant
     const participant = new Participant({ raceId, wallet, chosenMeme });
     await participant.save();
