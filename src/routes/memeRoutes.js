@@ -1,12 +1,12 @@
 const express = require('express');
-const Meme = require('../models/memeModels'); // Zorg dat je het model correct importeert
+const Meme = require('../models/Meme');
 
 const router = express.Router();
 
-// Route om alle memes op te halen
+// Route for memes
 router.get('/', async (req, res) => {
   try {
-    const memes = await Meme.find(); // Haal alle memes op
+    const memes = await Meme.find();
     res.json(memes);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch memes' });

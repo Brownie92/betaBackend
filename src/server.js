@@ -5,6 +5,7 @@ const cors = require('cors');
 
 // Import routes
 const memeRoutes = require('./routes/memeRoutes');
+const raceRoutes = require('./routes/raceRoutes'); // Nieuwe route voor racebeheer
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -16,11 +17,12 @@ app.use(express.json());
 
 // MongoDB connectie
 mongoose.connect(MONGO_URI)
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+    .then(() => console.log('Connected to MongoDB'))
+    .catch((err) => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/memes', memeRoutes);
+app.use('/api/races', raceRoutes); // Nieuwe endpoint voor races
 
 // Start server
 app.listen(PORT, () => {
