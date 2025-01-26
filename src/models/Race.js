@@ -11,8 +11,8 @@ const raceSchema = new mongoose.Schema({
   ],
   participants: [
     {
-      wallet: { type: String, required: true, unique: true },
-      chosenMeme: { type: String, required: true },
+      wallet: { type: String, required: true }, // Correcte syntax
+      chosenMeme: { type: String, required: true }, // Correcte syntax
     },
   ],
   currentRound: { type: Number, default: 1 },

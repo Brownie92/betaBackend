@@ -1,7 +1,11 @@
+require('./cron/roundScheduler');
 require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+
+
 
 // Import routes
 const memeRoutes = require('./routes/memeRoutes');

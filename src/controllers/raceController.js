@@ -24,7 +24,7 @@ const startRace = async (req, res) => {
       raceId,
       memes: randomMemes.map((meme) => ({ name: meme.name, url: meme.url })), // Include meme URL for frontend usage
       currentRound: 1,
-      roundEndTime: new Date(Date.now() + 8 * 60 * 60 * 1000), // Set round end time to 8 hours from now
+      roundEndTime: new Date(Date.now() + 3 * 60 * 1000),
     });
 
     // Save the race to the database
