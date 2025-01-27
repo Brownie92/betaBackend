@@ -40,6 +40,18 @@ const voteForMeme = async (req, res) => {
       });
     }
 
+    // Controleer de cooldown op stemmen via de Vote-collectie
+    const cooldownTime = 60 * 1000; // Cooldown in milliseconden (60 seconden)
+    const lastVote = await Vote.findOne({ raceId, wallet }).sort({ timestamp: -1 }); // Meest recente stem ophalen
+    const now = new Date();
+
+    if (lastVote && now - new Date(lastVote.timestamp) < cooldownTime) {
+      const remainingTime = Math.ceil((cooldownTime - (now - new Date(lastVote.timestamp))) / 1000);
+      return res.status(429).json({
+        message: `You must wait ${remainingTime} seconds before voting again.`
+      });
+    }
+
     // Controleer of de gekozen meme geldig is in de race
     const meme = race.memes.find((m) => m.name === votedMeme);
     if (!meme) {
@@ -52,7 +64,7 @@ const voteForMeme = async (req, res) => {
       round: race.currentRound,
       wallet,
       meme: votedMeme,
-      timestamp: new Date()
+      timestamp: now
     });
     await vote.save();
 
