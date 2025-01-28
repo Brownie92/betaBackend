@@ -9,7 +9,8 @@ const cors = require('cors');
 
 // Import routes
 const memeRoutes = require('./routes/memeRoutes');
-const raceRoutes = require('./routes/raceRoutes'); // Nieuwe route voor racebeheer
+const raceRoutes = require('./routes/raceRoutes');
+const roundRoutes = require('./routes/roundRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -26,7 +27,8 @@ mongoose.connect(MONGO_URI)
 
 // Routes
 app.use('/api/memes', memeRoutes);
-app.use('/api/races', raceRoutes); // Nieuwe endpoint voor races
+app.use('/api/races', raceRoutes); 
+app.use('/rounds', roundRoutes);
 
 // Start server
 app.listen(PORT, () => {

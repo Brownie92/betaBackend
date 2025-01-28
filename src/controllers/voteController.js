@@ -1,13 +1,13 @@
 const Race = require('../models/Race');
 const Participant = require('../models/Participant');
-const Vote = require('../models/Vote'); // Nieuw model voor stemlogging
+const Vote = require('../models/Vote'); // Model voor stemlogging
 
 const voteForMeme = async (req, res) => {
-  const { raceId } = req.params;
-  const { wallet, votedMeme } = req.body;
+  const { raceId } = req.params; // Race ID uit de URL
+  const { wallet, votedMeme } = req.body; // Wallet en gekozen meme uit de body
 
   try {
-    // Controleer of de race bestaat
+    // Zoek de race
     const race = await Race.findOne({ raceId });
     if (!race) {
       return res.status(404).json({ message: 'Race not found' });
@@ -15,72 +15,70 @@ const voteForMeme = async (req, res) => {
 
     // Controleer of de race gesloten is
     if (race.status === 'closed') {
-      return res.status(400).json({
-        message: 'The race has ended. Voting is no longer allowed.'
-      });
+      return res.status(400).json({ message: 'The race is closed. Voting is no longer allowed.' });
     }
 
     // Controleer of stemmen mogelijk is (ronde 2 t/m 6)
     if (race.currentRound < 2 || race.currentRound > 6) {
-      return res.status(400).json({
-        message: `Voting is only allowed from round 2 to 6. Current round: ${race.currentRound}`
-      });
+      return res.status(400).json({ message: `Voting is only allowed from round 2 to 6. Current round: ${race.currentRound}` });
     }
 
-    // Controleer of de deelnemer bestaat in de aparte collectie
+    // Zoek de deelnemer
     const participant = await Participant.findOne({ raceId, wallet });
     if (!participant) {
-      return res.status(400).json({ message: 'Wallet not registered for this race' });
+      return res.status(400).json({ message: 'Participant not found for this race' });
     }
 
-    // Controleer of de deelnemer stemt op zijn gekozen meme
+    // Controleer of de deelnemer alleen kan stemmen op de gekozen meme
     if (participant.chosenMeme !== votedMeme) {
       return res.status(400).json({
-        message: `Invalid vote: You can only vote for your chosen meme (${participant.chosenMeme})`
+        message: `Invalid vote: You can only vote for your chosen meme (${participant.chosenMeme})`,
       });
     }
 
-    // Controleer de cooldown op stemmen via de Vote-collectie
-    const cooldownTime = 60 * 1000; // Cooldown in milliseconden (60 seconden)
-    const lastVote = await Vote.findOne({ raceId, wallet }).sort({ timestamp: -1 }); // Meest recente stem ophalen
-    const now = new Date();
-
-    if (lastVote && now - new Date(lastVote.timestamp) < cooldownTime) {
-      const remainingTime = Math.ceil((cooldownTime - (now - new Date(lastVote.timestamp))) / 1000);
-      return res.status(429).json({
-        message: `You must wait ${remainingTime} seconds before voting again.`
-      });
+    // Controleer of de deelnemer al heeft gestemd in deze ronde
+    const alreadyVoted = participant.votes.some((vote) => vote.roundNumber === race.currentRound);
+    if (alreadyVoted) {
+      return res.status(400).json({ message: 'You have already voted in this round.' });
     }
 
-    // Controleer of de gekozen meme geldig is in de race
+    // Vind de meme binnen de race
     const meme = race.memes.find((m) => m.name === votedMeme);
     if (!meme) {
-      return res.status(400).json({ message: `Invalid meme selection: ${votedMeme}` });
+      return res.status(400).json({ message: `Meme not found: ${votedMeme}` });
     }
 
-    // Log de stem in de votes-collectie
-    const vote = new Vote({
+    // Verhoog het aantal stemmen voor de meme
+    meme.votes += 1;
+
+    // Log de stem in de `Participant`-gegevens
+    participant.votes.push({
+      roundNumber: race.currentRound,
+      timestamp: new Date(),
+    });
+    await participant.save();
+
+    // Log de stem in de `Vote`-collectie voor toekomstige analyses
+    const voteLog = new Vote({
       raceId,
       round: race.currentRound,
       wallet,
       meme: votedMeme,
-      timestamp: now
+      timestamp: new Date(),
     });
-    await vote.save();
+    await voteLog.save();
 
-    // Voeg de stem toe aan de meme
-    meme.votes += 1;
-
-    // Sla de wijzigingen op in de race
+    // Sla de wijzigingen in de race op
     await race.save();
 
     res.status(200).json({
       message: 'Vote registered successfully',
-      votedMeme
+      votedMeme,
+      currentVotes: meme.votes,
     });
   } catch (error) {
     console.error('Error in voteForMeme:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    res.status(500).json({ message: 'Something went wrong while processing your vote.' });
   }
 };
 
