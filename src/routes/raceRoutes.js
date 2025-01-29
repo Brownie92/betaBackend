@@ -1,19 +1,10 @@
 const express = require('express');
-const { startRace, getRace } = require('../controllers/raceController');
-const { registerWallet } = require('../controllers/entryController');
-const { voteForMeme } = require('../controllers/voteController'); // Nieuwe controller importeren
+const { startRace, getRace, updateRaceStatus } = require('../controllers/raceController');
+
 const router = express.Router();
 
-// Race starten
-router.post('/', startRace);
-
-// Wallet registratie
-router.post('/:raceId/entry', registerWallet);
-
-// Stemmen
-router.post('/:raceId/vote', voteForMeme); // Stem-functionaliteit
-
-// Race details ophalen
-router.get('/:raceId', getRace);
+router.post('/', startRace); // Start een nieuwe race
+router.get('/:raceId', getRace); // Haal racegegevens op
+router.patch('/:raceId/status', updateRaceStatus); // Wijzig de status van een race
 
 module.exports = router;

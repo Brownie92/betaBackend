@@ -1,17 +1,11 @@
 const express = require('express');
-const Meme = require('../models/Meme');
-
 const router = express.Router();
+const memeController = require('../controllers/memeController');
 
-// Route for memes
-router.get('/', async (req, res) => {
-  try {
-    const memes = await Meme.find();
-    res.json(memes);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch memes' });
-  }
-});
+// Haal alle memes op
+router.get('/', memeController.getAllMemes);
 
-// Export de router
+// Voeg een nieuwe meme toe
+router.post('/', memeController.createMeme);
+
 module.exports = router;

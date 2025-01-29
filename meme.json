@@ -1,25 +1,31 @@
 [
     {
+      "memeId": "meme1",
       "name": "Bonk",
       "url": "https://example.com/meme1.jpg"
     },
     {
+      "memeId": "meme2",
       "name": "dogwifhat",
       "url": "https://example.com/meme2.jpg"
     },
     {
+      "memeId": "meme3",
       "name": "Pudgy Penguins",
       "url": "https://example.com/meme3.jpg"
     },
     {
+      "memeId": "meme4",
         "name": "popcat",
         "url": "https://example.com/meme3.jpg"
       },
       {
+        "memeId": "meme5",
         "name": "peanut the squirrel",
         "url": "https://example.com/meme3.jpg"
       },
       {
+        "memeId": "meme6",
         "name": "Moo Deng",
         "url": "https://example.com/meme3.jpg"
       }

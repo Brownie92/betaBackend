@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 
 const memeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  url: { type: String, required: true },
-}, { collection: 'meme' });
+    memeId: { type: String, required: true, unique: true }, // ✅ Unieke memeId
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+}, { timestamps: true });
 
-module.exports = mongoose.model('Meme', memeSchema);
+const Meme = mongoose.model('Meme', memeSchema);
+module.exports = Meme;

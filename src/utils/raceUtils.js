@@ -1,74 +1,95 @@
-const calculateProgressAndBoost = (memes, raceEndTime) => {
-  console.log('[DEBUG] calculateProgressAndBoost called with memes:', JSON.stringify(memes, null, 2));
+const calculateProgressAndBoost = (memes, votes) => {
+    console.log('[DEBUG] calculateProgressAndBoost called with memes:', JSON.stringify(memes, null, 2));
+    console.log('[DEBUG] Received votes:', JSON.stringify(votes, null, 2));
 
-  // Controleer of de race nog actief is
-  const now = new Date();
-  if (raceEndTime && now > raceEndTime) {
-    console.log(`[DEBUG] Race time has expired. Current time: ${now}, Race end time: ${raceEndTime}`);
-    return { updatedMemes: memes, roundLog: { progress: [], votes: [], winner: null } };
-  }
+    // **1️⃣ Bereken stemtotalen per meme**
+    const voteCounts = {};
+    votes.forEach(vote => {
+        if (!voteCounts[vote.memeId.toString()]) {
+            voteCounts[vote.memeId.toString()] = 0;
+        }
+        voteCounts[vote.memeId.toString()] += 1;
+    });
 
-  console.log(`[DEBUG] Race is still active. Current time: ${now}, Race end time: ${raceEndTime}`);
+    console.log('[DEBUG] Vote counts per meme:', JSON.stringify(voteCounts, null, 2));
 
-  // Vind de meest gestemde meme
-  const mostVotedMeme = memes.reduce(
-    (max, meme) => {
-      console.log(`[DEBUG] Comparing votes: current max = ${max.votes || 0}, meme = ${meme.votes}`);
-      return meme.votes > (max.votes || 0) ? meme : max;
-    },
-    { name: null, votes: 0 }
-  );
-  console.log(`[DEBUG] Most voted meme: ${mostVotedMeme.name} with ${mostVotedMeme.votes} votes`);
+    // **2️⃣ Bepaal de meme met de meeste stemmen**
+    let mostVotedMeme = { memeId: null, votes: 0 };
+    Object.keys(voteCounts).forEach(memeId => {
+        if (voteCounts[memeId] > mostVotedMeme.votes) {
+            mostVotedMeme = { memeId, votes: voteCounts[memeId] };
+        }
+    });
 
-  const roundLog = {
-    progress: [],
-    votes: [],
-    winner: null,
-  };
+    console.log(`[DEBUG] Most voted meme: ${mostVotedMeme.memeId} with ${mostVotedMeme.votes} votes`);
 
-  const updatedMemes = memes.map((meme, index) => {
-    console.log(`[DEBUG] Processing meme ${index + 1}/${memes.length}:`, meme);
-
-    // Willekeurige voortgang tussen 5-10
-    const randomProgress = Math.floor(Math.random() * 6) + 5;
-    console.log(`[DEBUG] Random progress generated for ${meme.name}: ${randomProgress}`);
-
-    let progress = meme.progress + randomProgress;
-    console.log(`[DEBUG] Initial progress for ${meme.name}: ${meme.progress}, after random addition: ${progress}`);
-
-    // 30% boost voor de meest gestemde meme
-    if (meme.name === mostVotedMeme.name) {
-      console.log(`[DEBUG] Applying 30% boost to ${meme.name}`);
-      progress = Math.floor(progress * 1.3);
-      console.log(`[DEBUG] Progress after boost for ${meme.name}: ${progress}`);
-    }
-
-    // Voeg progressie en stemmen toe aan het ronde-log
-    roundLog.progress.push({ meme: meme.name, progress: randomProgress });
-    roundLog.votes.push({ meme: meme.name, votes: meme.votes });
-
-    return {
-      ...meme,
-      progress,
-      votes: 0, // Reset stemmen voor de volgende ronde
+    const roundLog = {
+        progress: [],
+        votes: [],
+        winner: null, // Wordt later ingevuld
     };
-  });
 
-  console.log('[DEBUG] roundLog.progress:', JSON.stringify(roundLog.progress, null, 2));
+    // **3️⃣ Bereken de progressie per meme**
+    const updatedMemes = memes.map((meme) => {
+        console.log(`[DEBUG] Processing meme: ${meme.name} (ID: ${meme._id})`);
 
-  // Bepaal de winnaar van de ronde
-  const roundWinner = roundLog.progress.reduce((max, item) =>
-    item.progress > max.progress ? item : max,
-    { meme: null, progress: 0 }
-  );
+        // Willekeurige voortgang tussen 5-10
+        const randomProgress = Math.floor(Math.random() * 6) + 5;
+        let progress = meme.progress + randomProgress;
 
-  roundLog.winner = roundWinner.meme;
-  console.log(`[DEBUG] Round winner: ${roundLog.winner}`);
+        console.log(`[DEBUG] Initial progress for ${meme.name}: ${meme.progress}, after random addition: ${progress}`);
 
-  // Debuglog voor de gehele ronde
-  console.log('[DEBUG] Final Round Log:', JSON.stringify(roundLog, null, 2));
+        let boosted = false;
+        let boostAmount = 0;
 
-  return { updatedMemes, roundLog };
+        // **Extra logging om vergelijking te checken**
+        console.log(`[DEBUG] Comparing meme._id (${meme._id.toString()}) with mostVotedMeme.memeId (${mostVotedMeme.memeId})`);
+
+        // **4️⃣ Toepassen van de boost als de meme de meeste stemmen heeft**
+        if (meme._id.toString() === mostVotedMeme.memeId?.toString()) {
+            boosted = true;
+            boostAmount = Math.floor(progress * 0.3);
+            progress += boostAmount;
+
+            console.log(`[DEBUG] Boost applied to ${meme.name}: +${boostAmount} (Total: ${progress})`);
+        }
+
+        // **5️⃣ Voeg progressie en stemmen toe aan het ronde-log**
+        roundLog.progress.push({
+            memeId: meme._id,
+            progress: randomProgress,
+            boosted,
+            boostAmount
+        });
+
+        roundLog.votes.push({
+            memeId: meme._id,
+            votes: voteCounts[meme._id.toString()] || 0
+        });
+
+        return {
+            ...meme,
+            progress,
+            votes: 0, // Reset stemmen voor de volgende ronde
+        };
+    });
+
+    console.log('[DEBUG] roundLog.progress:', JSON.stringify(roundLog.progress, null, 2));
+    console.log('[DEBUG] roundLog.votes:', JSON.stringify(roundLog.votes, null, 2));
+
+    // **6️⃣ Bepaal de winnaar van deze ronde**
+    const roundWinner = roundLog.progress.reduce((max, item) => {
+        return item.progress > max.progress ? item : max;
+    }, { memeId: null, progress: 0 });
+
+    roundLog.winner = roundWinner.memeId;
+
+    console.log(`[DEBUG] Round winner: ${roundLog.winner}`);
+
+    // **7️⃣ Laatste controle voordat we het terugsturen**
+    console.log('[DEBUG] Final Round Log:', JSON.stringify(roundLog, null, 2));
+
+    return { updatedMemes, roundLog };
 };
 
 module.exports = { calculateProgressAndBoost };

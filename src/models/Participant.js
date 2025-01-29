@@ -1,15 +1,11 @@
 const mongoose = require('mongoose');
 
 const participantSchema = new mongoose.Schema({
-  raceId: { type: String, required: true },
-  wallet: { type: String, required: true },
-  chosenMeme: { type: String, required: true }, // Meme waarop deze deelnemer kan stemmen
-  votes: [
-    {
-      roundNumber: { type: Number, required: true },
-      timestamp: { type: Date, default: Date.now },
-    },
-  ], // Houdt bij in welke rondes er is gestemd
-});
+    raceId: { type: String, required: true, index: true }, // Race waaraan deelnemer meedoet
+    walletAddress: { type: String, required: true, index: true }, // Wallet adres van de deelnemer
+    memeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Meme', required: true }, // Gekozen meme
+    hasVotedInRounds: { type: [Number], default: [] } // Lijst met rondes waarin deze deelnemer al heeft gestemd
+}, { timestamps: true });
 
-module.exports = mongoose.model('Participant', participantSchema);
+const Participant = mongoose.model('Participant', participantSchema);
+module.exports = Participant;

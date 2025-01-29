@@ -1,18 +1,20 @@
 const mongoose = require('mongoose');
 
 const raceSchema = new mongoose.Schema({
-    raceId: { type: String, unique: true, required: true },
+    raceId: { type: String, required: true, unique: true }, // Uniek ID voor de race
     memes: [
-      {
-        name: String,
-        url: String,
-        votes: Number,
-        progress: Number,
-      },
+        {
+            memeId: { type: String, required: true }, // Uniek kenmerk per meme
+            name: { type: String, required: true },
+            url: { type: String, required: true },
+            votes: { type: Number, default: 0 },
+            progress: { type: Number, default: 0 },
+        }
     ],
-    currentRound: { type: Number, default: 1 },
-    status: { type: String, enum: ['open', 'closed'], default: 'open' },
-    roundEndTime: { type: Date, required: true },
-  });
-  
-  module.exports = mongoose.model('Race', raceSchema);
+    currentRound: { type: Number, default: 1 }, // De huidige ronde (1 t/m 6)
+    roundEndTime: { type: Date, required: true }, // Tijdstip waarop de ronde eindigt
+    status: { type: String, enum: ['active', 'closed'], default: 'active' }, // Status van de race
+}, { timestamps: true });
+
+const Race = mongoose.model('Race', raceSchema);
+module.exports = Race;
