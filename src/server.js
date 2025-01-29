@@ -11,7 +11,7 @@ const raceRoutes = require('./routes/raceRoutes');
 const voteRoutes = require('./routes/voteRoutes');
 const roundRoutes = require('./routes/roundRoutes');
 const participantRoutes = require('./routes/participantRoutes');
-// const winnerRoutes = require('./routes/winnerRoutes');
+const winnerRoutes = require('./routes/winnerRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 4001;
@@ -35,7 +35,7 @@ app.use('/api/races', raceRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/rounds', roundRoutes);
 app.use('/api/participants', participantRoutes);
-// app.use('/api/winners', winnerRoutes);
+app.use('/api/winners', winnerRoutes);
 
 // Fallback route voor niet-bestaande endpoints
 app.use((req, res) => {
@@ -47,6 +47,8 @@ app.use((err, req, res, next) => {
     console.error('[ERROR] ❌', err.stack);
     res.status(500).json({ message: '❌ Internal Server Error', error: err.message });
 });
+
+require('./schedulers/roundScheduler');
 
 // Start server
 app.listen(PORT, () => {

@@ -7,9 +7,7 @@ const Round = require('../models/Round');
  */
 const getRoundsByRace = async (raceId) => {
     try {
-        const rounds = await Round.find({ raceId }).sort({ roundNumber: 1 });
-        console.log(`[DEBUG] Retrieved ${rounds.length} rounds for race ${raceId}`);
-        return rounds;
+        return await Round.find({ raceId }).sort({ roundNumber: 1 });
     } catch (error) {
         console.error('[ERROR] Failed to retrieve rounds:', error);
         throw error;
