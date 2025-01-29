@@ -27,8 +27,8 @@ const processRound = async (race) => {
     try {
         console.log(`[DEBUG] Processing round ${race.currentRound} for race ${race.raceId}`);
 
-        // **1️⃣ Haal alle stemmen op voor deze ronde**
-        const votes = await Vote.find({ raceId: race.raceId, roundNumber: race.currentRound });
+        // **1️⃣ Haal alleen pending votes op voor deze ronde**
+        const votes = await Vote.find({ raceId: race.raceId, roundNumber: race.currentRound, status: 'pending' });
         console.log(`[DEBUG] Found ${votes.length} votes for round ${race.currentRound}`);
 
         // **2️⃣ Bereken voortgang en boosts op basis van stemmen**
@@ -51,8 +51,9 @@ const processRound = async (race) => {
         await newRound.save();
         console.log(`[DEBUG] Round ${newRound.roundNumber} saved for race ${race.raceId}`);
 
-        // **4️⃣ Verwijder alle stemmen voor deze ronde (ze zijn verwerkt)**
-        await Vote.deleteMany({ raceId: race.raceId, roundNumber: race.currentRound });
+        // **4️⃣ Markeer votes als 'processed' in plaats van te verwijderen**
+        await Vote.updateMany({ raceId: race.raceId, roundNumber: race.currentRound }, { status: 'processed' });
+        console.log(`[DEBUG] Votes for round ${race.currentRound} marked as processed`);
 
         // **5️⃣ Update de race naar de volgende ronde**
         race.memes = updatedMemes.map(meme => ({ ...meme, votes: 0 })); // Reset stemmen
