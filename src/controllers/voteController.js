@@ -23,12 +23,22 @@ const castVote = async (req, res) => {
             return res.status(403).json({ message: 'Je bent geen deelnemer van deze race' });
         }
 
-        // Controleer of de gebruiker al heeft gestemd in deze ronde
+        // **1️⃣ Controleer of de deelnemer al heeft gestemd in deze ronde**
         if (participant.hasVotedInRounds.includes(race.currentRound)) {
             return res.status(403).json({ message: 'Je hebt al gestemd in deze ronde' });
         }
 
-        // Sla de stem op in de Vote collectie
+        // **2️⃣ Controleer of de deelnemer in ronde 1 een meme heeft gekozen**
+        if (!participant.memeId) {
+            return res.status(403).json({ message: 'Je hebt in ronde 1 geen meme gekozen en kunt niet stemmen' });
+        }
+
+        // **3️⃣ Vanaf ronde 2: Controleer of de deelnemer op de juiste meme stemt**
+        if (race.currentRound > 1 && memeId !== participant.memeId.toString()) {
+            return res.status(403).json({ message: 'Je kunt alleen stemmen op de meme die je in ronde 1 hebt gekozen' });
+        }
+
+        // **4️⃣ Sla de stem op in de Vote-collectie**
         const newVote = new Vote({
             raceId,
             roundNumber: race.currentRound,
@@ -38,7 +48,7 @@ const castVote = async (req, res) => {
 
         await newVote.save();
 
-        // Update participant om te registreren dat deze gebruiker heeft gestemd
+        // **5️⃣ Update participant om te registreren dat deze gebruiker heeft gestemd**
         participant.hasVotedInRounds.push(race.currentRound);
         await participant.save();
 
