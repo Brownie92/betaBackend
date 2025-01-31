@@ -25,6 +25,12 @@ const getRounds = async (req, res) => {
  */
 const processRound = async (race) => {
     try {
+        // ✅ **Controleer of de race al gesloten is**
+        if (race.status === 'closed') {
+            console.warn(`[WARNING] Race ${race.raceId} is already closed. No further rounds can be processed.`);
+            return { message: 'Race is closed. No further rounds can be processed.' };
+        }
+
         // **1️⃣ Haal pending votes op voor deze ronde**
         const votes = await Vote.find({ raceId: race.raceId, roundNumber: race.currentRound, status: 'pending' });
 
@@ -45,35 +51,35 @@ const processRound = async (race) => {
         });
         await newRound.save();
 
-        // **4️⃣ Stemmen tellen uit `votes`-collectie**
+        // **4️⃣ Haal ALLE votes op (processed + huidige ronde)**
         const voteCounts = await Vote.aggregate([
-            { $match: { raceId: race.raceId, status: 'processed' } },
+            { $match: { raceId: race.raceId } }, // 🔹 Pak ALLE votes, niet alleen processed!
             { $group: { _id: "$memeId", totalVotes: { $sum: 1 } } }
         ]);
 
-        // **5️⃣ Progress cumulatief ophalen uit `rounds`-collectie**
+        // **5️⃣ Haal de cumulatieve progressie uit de Round-collectie**
         const progressData = await Round.aggregate([
             { $match: { raceId: race.raceId } },
             { $unwind: "$progress" },
             { $group: { _id: "$progress.memeId", totalProgress: { $sum: "$progress.progress" } } }
         ]);
 
-        // **6️⃣ Update progress & votes in `Race`**
+        // **6️⃣ Update de Race-collectie met nieuwe progress & votes**
         race.memes = race.memes.map(meme => {
-            const voteData = voteCounts.find(vote => vote._id?.toString() === meme.memeId?.toString()) || { totalVotes: 0 };
+            const voteData = voteCounts.find(v => v._id?.toString() === meme.memeId?.toString()) || { totalVotes: 0 };
             const progressInfo = progressData.find(p => p._id?.toString() === meme.memeId?.toString()) || { totalProgress: 0 };
 
             return {
                 ...meme,
-                progress: progressInfo.totalProgress, // ✅ Progress uit `rounds`-collectie halen
-                votes: voteData.totalVotes // ✅ Votes correct updaten
+                progress: progressInfo.totalProgress, // ✅ Progress updaten
+                votes: voteData.totalVotes // ✅ Votes direct updaten
             };
         });
 
-        // **7️⃣ Markeer votes als 'processed'**
+        // **7️⃣ Markeer de votes van deze ronde als 'processed'**
         await Vote.updateMany({ raceId: race.raceId, roundNumber: race.currentRound }, { status: 'processed' });
 
-        // **8️⃣ Update race naar volgende ronde of sluit af**
+        // **8️⃣ Update race naar de volgende ronde of sluit af**
         if (race.currentRound < 6) {
             race.currentRound += 1;
             race.roundEndTime = new Date(Date.now() + 3 * 60 * 1000);
