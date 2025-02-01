@@ -4,6 +4,7 @@ const Vote = require('../models/Vote');
 const roundService = require('../services/roundService');
 const { calculateProgressAndBoost } = require('../utils/raceUtils');
 const { saveWinner } = require('../controllers/winnerController');
+const { sendRoundUpdate, sendRaceUpdate, sendWinnerUpdate } = require('../socket');
 
 /**
  * Haal alle rondes op voor een specifieke race
@@ -51,6 +52,9 @@ const processRound = async (race) => {
         });
         await newRound.save();
 
+        // ✅ **WebSocket: Stuur ronde-update naar frontend**
+        sendRoundUpdate(newRound);
+
         // **4️⃣ Haal ALLE votes op (processed + huidige ronde)**
         const voteCounts = await Vote.aggregate([
             { $match: { raceId: race.raceId } }, // 🔹 Pak ALLE votes, niet alleen processed!
@@ -76,6 +80,9 @@ const processRound = async (race) => {
             };
         });
 
+        // ✅ **WebSocket: Stuur race-update naar frontend**
+        sendRaceUpdate(race);
+
         // **7️⃣ Markeer de votes van deze ronde als 'processed'**
         await Vote.updateMany({ raceId: race.raceId, roundNumber: race.currentRound }, { status: 'processed' });
 
@@ -87,7 +94,8 @@ const processRound = async (race) => {
             race.status = 'closed';
             await race.save();
             try {
-                await saveWinner(race.raceId);
+                const winner = await saveWinner(race.raceId);
+                sendWinnerUpdate(winner); // ✅ **WebSocket: Stuur winnaar-update naar frontend**
             } catch (winnerError) {
                 console.error(`Fout bij opslaan van winnaar:`, winnerError);
             }

@@ -1,11 +1,16 @@
 const Race = require('../models/Race');
 const Meme = require('../models/Meme');
 const raceService = require('../services/raceService');
+const { sendRaceCreated, sendRaceUpdate } = require('../socket'); // ✅ WebSockets via socket.js
 
-// Start een nieuwe race
+// ✅ Start een nieuwe race
 const startRace = async (req, res) => {
     try {
         const race = await raceService.createRace();
+
+        // ✅ WebSocket: Stuur event naar frontend
+        sendRaceCreated(race);
+
         res.status(201).json({ message: 'Race created successfully', race });
     } catch (error) {
         console.error('[ERROR] Failed to start race:', error);
@@ -13,7 +18,7 @@ const startRace = async (req, res) => {
     }
 };
 
-// Haal een race op
+// ✅ Haal een race op
 const getRace = async (req, res) => {
     try {
         const race = await raceService.getRaceById(req.params.raceId);
@@ -25,12 +30,16 @@ const getRace = async (req, res) => {
     }
 };
 
-// Update de status van een race
+// ✅ Update de status van een race
 const updateRaceStatus = async (req, res) => {
     try {
         const { status } = req.body;
         const race = await raceService.updateRaceStatus(req.params.raceId, status);
         if (!race) return res.status(404).json({ message: 'Race not found' });
+
+        // ✅ WebSocket: Stuur race-status update
+        sendRaceUpdate(race);
+
         res.status(200).json({ message: 'Race status updated successfully', race });
     } catch (error) {
         console.error('[ERROR] Failed to update race status:', error);

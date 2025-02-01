@@ -1,6 +1,7 @@
 const Winner = require('../models/Winner');
 const Race = require('../models/Race');
 const Vote = require('../models/Vote');
+const { sendWinnerUpdate } = require('../socket'); // ✅ WebSocket import
 
 /**
  * Sla de winnaar op zodra de race is afgesloten
@@ -21,7 +22,7 @@ const saveWinner = async (raceId) => {
         // ✅ Controleer of de winnaar al is opgeslagen
         const existingWinner = await Winner.findOne({ raceId });
         if (existingWinner) {
-            return;
+            return existingWinner; // 🚀 Winner al opgeslagen, geen dubbele entry maken
         }
 
         // ✅ Query alle stemmen uit de `Vote` collectie (status: 'processed')
@@ -43,6 +44,11 @@ const saveWinner = async (raceId) => {
         });
 
         await winner.save();
+
+        // ✅ WebSocket event versturen naar frontend
+        sendWinnerUpdate(winner);
+
+        return winner;
     } catch (error) {
         console.error(`[ERROR] ❌ Failed to save winner:`, error);
         throw error;
