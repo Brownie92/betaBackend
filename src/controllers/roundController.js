@@ -53,6 +53,7 @@ const processRound = async (race) => {
         await newRound.save();
 
         // ✅ **WebSocket: Stuur ronde-update naar frontend**
+        console.log("[DEBUG] 🟡 Sending round update via WebSocket");
         sendRoundUpdate(newRound);
 
         // **4️⃣ Haal ALLE votes op (processed + huidige ronde)**
@@ -94,8 +95,7 @@ const processRound = async (race) => {
             race.status = 'closed';
             await race.save();
             try {
-                const winner = await saveWinner(race.raceId);
-                sendWinnerUpdate(winner); // ✅ **WebSocket: Stuur winnaar-update naar frontend**
+                await saveWinner(race.raceId); 
             } catch (winnerError) {
                 console.error(`Fout bij opslaan van winnaar:`, winnerError);
             }

@@ -46,6 +46,7 @@ const saveWinner = async (raceId) => {
         await winner.save();
 
         // ✅ WebSocket event versturen naar frontend
+        console.log("[DEBUG] 🟡 Sending winner update via WebSocket");
         sendWinnerUpdate(winner);
 
         return winner;

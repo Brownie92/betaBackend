@@ -5,7 +5,7 @@ const cors = require('cors');
 const http = require('http');
 
 // **Importeer WebSocket-module**
-const { initSocket, sendRaceCreated, sendRaceUpdate, sendRoundUpdate, sendWinnerUpdate } = require('./socket');
+const socket = require('./socket');
 
 // **Express + HTTP server instellen**
 const app = express();
@@ -25,8 +25,14 @@ mongoose.connect(MONGO_URI)
         process.exit(1);
     });
 
-// **WebSocket initialiseren**
-const io = initSocket(server);
+// **WebSocket initialiseren & opslaan**
+const io = socket.initSocket(server);
+
+if (!io) {
+    console.error("[ERROR] ❌ WebSocket kon niet worden geïnitialiseerd!");
+} else {
+    console.log("[DEBUG] 🔄 WebSocket succesvol gestart!");
+}
 
 // **Routes importeren**
 app.use('/api/memes', require('./routes/memeRoutes'));
@@ -58,8 +64,8 @@ server.listen(PORT, () => {
 // **Exports voor WebSocket events**
 module.exports = {
     io,
-    sendRaceCreated,
-    sendRaceUpdate,
-    sendRoundUpdate,
-    sendWinnerUpdate
+    sendRaceCreated: socket.sendRaceCreated,
+    sendRaceUpdate: socket.sendRaceUpdate,
+    sendRoundUpdate: socket.sendRoundUpdate,
+    sendWinnerUpdate: socket.sendWinnerUpdate
 };
