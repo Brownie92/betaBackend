@@ -1,5 +1,4 @@
 const Race = require('../models/Race');
-const Meme = require('../models/Meme');
 const raceService = require('../services/raceService');
 const { sendRaceCreated, sendRaceUpdate } = require('../socket'); // ✅ WebSockets via socket.js
 
@@ -13,19 +12,30 @@ const startRace = async (req, res) => {
 
         res.status(201).json({ message: 'Race created successfully', race });
     } catch (error) {
-        console.error('[ERROR] Failed to start race:', error);
+        console.error('[ERROR] ❌ Failed to start race:', error);
         res.status(500).json({ message: 'Failed to start race', error: error.message });
     }
 };
 
-// ✅ Haal een race op
+// ✅ Haal alle races op
+const getAllRaces = async (req, res) => {
+    try {
+        const races = await Race.find(); // Alle races ophalen
+        res.status(200).json(races);
+    } catch (error) {
+        console.error('[ERROR] ❌ Failed to fetch races:', error);
+        res.status(500).json({ message: 'Failed to fetch races', error: error.message });
+    }
+};
+
+// ✅ Haal een specifieke race op
 const getRace = async (req, res) => {
     try {
         const race = await raceService.getRaceById(req.params.raceId);
         if (!race) return res.status(404).json({ message: 'Race not found' });
         res.status(200).json(race);
     } catch (error) {
-        console.error('[ERROR] Failed to fetch race:', error);
+        console.error('[ERROR] ❌ Failed to fetch race:', error);
         res.status(500).json({ message: 'Failed to fetch race', error: error.message });
     }
 };
@@ -42,9 +52,9 @@ const updateRaceStatus = async (req, res) => {
 
         res.status(200).json({ message: 'Race status updated successfully', race });
     } catch (error) {
-        console.error('[ERROR] Failed to update race status:', error);
+        console.error('[ERROR] ❌ Failed to update race status:', error);
         res.status(500).json({ message: 'Failed to update race status', error: error.message });
     }
 };
 
-module.exports = { startRace, getRace, updateRaceStatus };
+module.exports = { startRace, getAllRaces, getRace, updateRaceStatus };
