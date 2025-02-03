@@ -31,7 +31,24 @@ const createMeme = async (req, res) => {
     }
 };
 
+const getMemesByIds = async (req, res) => {
+    const { memeIds } = req.body; // Verwacht een lijst van memeId's
+
+    if (!memeIds || !Array.isArray(memeIds)) {
+        return res.status(400).json({ message: "Invalid request: memeIds should be an array" });
+    }
+
+    try {
+        const memes = await Meme.find({ memeId: { $in: memeIds } }); // Haal alle memes op die in de lijst zitten
+        res.status(200).json(memes);
+    } catch (error) {
+        console.error("[ERROR] ❌ Kan memes niet ophalen:", error);
+        res.status(500).json({ message: "Failed to fetch memes" });
+    }
+};
+
 module.exports = {
     getAllMemes,
-    createMeme
+    createMeme,
+    getMemesByIds 
 };
