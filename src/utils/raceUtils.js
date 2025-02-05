@@ -12,7 +12,6 @@ const calculateProgressAndBoost = (memes, votes) => {
     );
 
     // ✅ 3️⃣ Bepaal de boost-verdeling
-    const maxVotes = Math.max(...Object.values(voteCounts), 1); // Voorkomt delen door 0
     const boostRanges = {
         1: [35, 50], // 🥇 Nummer 1 krijgt 35 - 50% boost van 100
         2: [15, 25], // 🥈 Nummer 2 krijgt 15 - 25% boost van 100
@@ -33,7 +32,7 @@ const calculateProgressAndBoost = (memes, votes) => {
         let boostAmount = 0;
 
         // ✅ 4️⃣ Alleen top 3 memes krijgen een boost
-        if (index < 3 && voteCounts[meme.memeId.toString()]) {
+        if (index < 3 && voteCounts[meme.memeId.toString()] > 0) {
             boosted = true;
             const [minBoost, maxBoost] = boostRanges[index + 1]; // Haal juiste range op
             const boostPercentage = Math.random() * (maxBoost - minBoost) + minBoost;
@@ -45,10 +44,10 @@ const calculateProgressAndBoost = (memes, votes) => {
         // ✅ 5️⃣ Log resultaat per meme
         roundLog.progress.push({
             memeId: meme.memeId,
+            progress: totalProgress, // ✅ Zorgt ervoor dat progress ALTIJD correct wordt opgeslagen
             baseProgress,
             boosted,
-            boostAmount,
-            totalProgress
+            boostAmount
         });
 
         roundLog.votes.push({
@@ -60,13 +59,13 @@ const calculateProgressAndBoost = (memes, votes) => {
 
         return {
             ...meme,
-            progress: (meme.progress || 0) + totalProgress
+            progress: (meme.progress || 0) + totalProgress // ✅ Voorkomt dat progress `undefined` is
         };
     });
 
     // ✅ 6️⃣ Bepaal de winnaar van deze ronde (hoogste totale progressie)
     const roundWinner = roundLog.progress.reduce((max, item) => 
-        item.totalProgress > max.totalProgress ? item : max, { memeId: null, totalProgress: 0 }
+        item.progress > max.progress ? item : max, { memeId: null, progress: 0 }
     );
     roundLog.winner = roundWinner.memeId;
 
