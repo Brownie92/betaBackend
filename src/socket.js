@@ -23,6 +23,8 @@ const initSocket = (server) => {
         });
     });
 
+    
+
     return io;
 };
 
@@ -39,6 +41,14 @@ const sendRaceCreated = (race) => emitEvent("raceCreated", race);
 const sendRaceUpdate = (race) => emitEvent("raceUpdate", race);
 const sendRoundUpdate = (round) => emitEvent("roundUpdate", round);
 const sendWinnerUpdate = (winner) => emitEvent("winnerUpdate", winner);
+const sendVoteUpdate = (raceId) => {
+    if (!io) {
+        console.warn("[SOCKET] ⚠️ WebSocket not initialized, cannot send vote update.");
+        return;
+    }
+    io.emit("voteUpdate", { raceId });
+};
+
 
 // **Exports**
 module.exports = {
@@ -46,5 +56,6 @@ module.exports = {
     sendRaceCreated,
     sendRaceUpdate,
     sendRoundUpdate,
-    sendWinnerUpdate
+    sendWinnerUpdate,
+    sendVoteUpdate
 };
