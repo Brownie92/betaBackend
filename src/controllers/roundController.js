@@ -4,7 +4,7 @@ const Vote = require('../models/Vote');
 const roundService = require('../services/roundService');
 const { calculateProgressAndBoost } = require('../utils/raceUtils');
 const { saveWinner } = require('../controllers/winnerController');
-const { sendRoundUpdate, sendRaceUpdate, sendWinnerUpdate } = require('../socket');
+const { sendRaceUpdate, sendWinnerUpdate } = require('../socket'); // ⬅️ Removed sendRoundUpdate
 
 /**
  * Haal alle rondes op voor een specifieke race
@@ -52,10 +52,6 @@ const processRound = async (race) => {
         });
         await newRound.save();
 
-        // ✅ **WebSocket: Stuur ronde-update naar frontend**
-        console.log("[DEBUG] 🟡 Sending round update via WebSocket");
-        sendRoundUpdate(newRound);
-
         // **4️⃣ Haal ALLE votes op (processed + huidige ronde)**
         const voteCounts = await Vote.aggregate([
             { $match: { raceId: race.raceId } }, // 🔹 Pak ALLE votes, niet alleen processed!
@@ -81,9 +77,6 @@ const processRound = async (race) => {
             };
         });
 
-        // ✅ **WebSocket: Stuur race-update naar frontend**
-        sendRaceUpdate(race);
-
         // **7️⃣ Markeer de votes van deze ronde als 'processed'**
         await Vote.updateMany({ raceId: race.raceId, roundNumber: race.currentRound }, { status: 'processed' });
 
@@ -96,13 +89,20 @@ const processRound = async (race) => {
             await race.save();
             try {
                 await saveWinner(race.raceId); 
+                sendWinnerUpdate(race.raceId); // ✅ Winnaar-update naar frontend sturen
             } catch (winnerError) {
                 console.error(`Fout bij opslaan van winnaar:`, winnerError);
             }
             return { race, newRound };
         }
 
+        // ✅ **Sla race eerst op voordat WebSocket-updates worden verstuurd**
         await race.save();
+
+        // ✅ **Verstuur WebSocket-update op de JUISTE plek**
+        console.log("🔄 WebSocket RACE update:", race);
+        sendRaceUpdate(race); // ✅ Race-update sturen NA de database update!
+
         return { race, newRound };
     } catch (error) {
         console.error('[ERROR] Failed to process round:', error);

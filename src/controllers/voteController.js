@@ -62,11 +62,11 @@ const castVote = async (req, res) => {
 
     // ✅ **9️⃣ Count total votes for this meme**
     const totalVotes = await Vote.countDocuments({
-        raceId,
-        memeId,
-        status: "pending",
-        roundNumber: race.currentRound // ✅ Alleen stemmen van de huidige ronde meetellen
+      raceId,
+      memeId,
+      roundNumber: race.currentRound, // ✅ Alleen stemmen van de huidige ronde meetellen
     });
+
     console.log(`📡 [SOCKET] Verzenden voteUpdate: Race ${raceId}, Meme ${memeId}, Ronde ${race.currentRound}, TotalVotes: ${totalVotes}`);
 
     // ✅ **🔄 Send WebSocket update with memeId & totalVotes**
@@ -79,6 +79,37 @@ const castVote = async (req, res) => {
   }
 };
 
+/**
+ * Get votes for a specific race and round.
+ * @route GET /api/votes/:raceId?round=<roundNumber>
+ */
+const getVotesForRound = async (req, res) => {
+  const { raceId } = req.params;
+  const roundNumber = Number(req.query.round); // Zet om naar nummer
+
+  try {
+    if (!roundNumber) {
+      return res.status(400).json({ message: "Round number is required" });
+    }
+
+    console.log(`🔎 Fetching votes for Race: ${raceId}, Round: ${roundNumber}`);
+
+    // ✅ Haal stemmen op voor de juiste race en ronde
+    const votes = await Vote.aggregate([
+      { $match: { raceId, roundNumber } },
+      { $group: { _id: "$memeId", totalVotes: { $sum: 1 } } }
+    ]);
+
+    console.log("✅ Votes gevonden:", votes);
+
+    res.json(votes);
+  } catch (error) {
+    console.error("[ERROR] ❌ Error fetching votes:", error);
+    res.status(500).json({ message: "Error fetching votes", error: error.message });
+  }
+};
+
 module.exports = {
   castVote,
+  getVotesForRound, // ✅ Nieuwe functie toegevoegd!
 };
