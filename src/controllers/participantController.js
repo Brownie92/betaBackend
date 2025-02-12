@@ -3,36 +3,36 @@ const Meme = require('../models/Meme');
 const Participant = require('../models/Participant');
 
 /**
- * Registreer een deelnemer bij een race
+ * Registers a participant in a race
  */
 const registerParticipant = async (req, res) => {
     try {
         const { raceId, walletAddress, memeId } = req.body;
 
-        // Check of alle verplichte velden zijn meegegeven
+        // Validate required fields
         if (!raceId || !walletAddress || !memeId) {
-            return res.status(400).json({ message: "Race ID, Wallet Address en Meme ID zijn verplicht" });
+            return res.status(400).json({ message: "Race ID, Wallet Address, and Meme ID are required" });
         }
 
-        // Check of de race bestaat
+        // Check if the race exists
         const raceExists = await Race.findOne({ raceId });
         if (!raceExists) {
-            return res.status(404).json({ message: "Race niet gevonden" });
+            return res.status(404).json({ message: "Race not found" });
         }
 
-        // Check of de gekozen meme bestaat
+        // Check if the selected meme exists
         const memeExists = await Meme.findById(memeId);
         if (!memeExists) {
-            return res.status(404).json({ message: "Gekozen meme niet gevonden" });
+            return res.status(404).json({ message: "Selected meme not found" });
         }
 
-        // Controleer of deze wallet al geregistreerd is voor deze race
+        // Ensure the wallet is not already registered for this race
         const existingParticipant = await Participant.findOne({ raceId, walletAddress });
         if (existingParticipant) {
-            return res.status(400).json({ message: "Je bent al geregistreerd voor deze race" });
+            return res.status(400).json({ message: "You are already registered for this race" });
         }
 
-        // Maak en sla de nieuwe deelnemer op
+        // Create and save the new participant
         const newParticipant = new Participant({
             raceId,
             walletAddress,
@@ -40,16 +40,15 @@ const registerParticipant = async (req, res) => {
         });
 
         await newParticipant.save();
-        res.status(201).json({ message: "Deelnemer succesvol geregistreerd", participant: newParticipant });
+        res.status(201).json({ message: "Participant successfully registered", participant: newParticipant });
 
     } catch (error) {
-        console.error("[ERROR] Failed to register participant:", error);
-        res.status(500).json({ message: "Fout bij registreren van deelnemer", error: error.message });
+        res.status(500).json({ message: "Error registering participant", error: error.message });
     }
 };
 
 /**
- * Haal alle deelnemers van een specifieke race op
+ * Retrieves all participants for a specific race
  */
 const getParticipantsByRace = async (req, res) => {
     const { raceId } = req.params;
@@ -58,8 +57,7 @@ const getParticipantsByRace = async (req, res) => {
         const participants = await Participant.find({ raceId });
         res.status(200).json({ raceId, participants });
     } catch (error) {
-        console.error('[ERROR] Failed to fetch participants:', error);
-        res.status(500).json({ message: 'Interne serverfout' });
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 

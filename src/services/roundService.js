@@ -1,15 +1,15 @@
-const Round = require('../models/Round');
+const Round = require("../models/Round");
 
 /**
- * Haal alle rondes op voor een specifieke race
- * @param {String} raceId - De ID van de race
- * @returns {Array} - Lijst van rondes voor de race
+ * Retrieves all rounds for a specific race.
+ * @param {string} raceId - The race ID.
+ * @returns {Promise<Array>} - A list of rounds for the specified race.
  */
 const getRoundsByRace = async (raceId) => {
     try {
         return await Round.find({ raceId }).sort({ roundNumber: 1 });
     } catch (error) {
-        console.error('[ERROR] Failed to retrieve rounds:', error);
+        console.error("[ERROR] ❌ Failed to retrieve rounds:", error);
         throw error;
     }
 };

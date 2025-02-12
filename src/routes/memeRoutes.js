@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const memeController = require('../controllers/memeController');
 
-// Haal alle memes op
+// ✅ Fetch all memes
 router.get('/', memeController.getAllMemes);
 
-// Haal memes op op basis van een lijst van memeIds
+// ✅ Fetch memes based on a list of meme IDs
 router.post('/byIds', memeController.getMemesByIds);
 
-// Voeg een nieuwe meme toe
+// ✅ Add a new meme
 router.post('/', memeController.createMeme);
 
 module.exports = router;

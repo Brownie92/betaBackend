@@ -3,9 +3,16 @@ const { startRace, getRace, getAllRaces, updateRaceStatus } = require("../contro
 
 const router = express.Router();
 
-router.post("/", startRace); // Start een nieuwe race
-router.get("/", getAllRaces); // ✅ Haal alle races op
-router.get("/:raceId", getRace); // Haal een specifieke race op
-router.patch("/:raceId/status", updateRaceStatus); // Wijzig de status van een race
+// ✅ Start a new race
+router.post("/", startRace);
+
+// ✅ Retrieve all races
+router.get("/", getAllRaces);
+
+// ✅ Retrieve a specific race by ID
+router.get("/:raceId", getRace);
+
+// ✅ Update the status of a race
+router.patch("/:raceId/status", updateRaceStatus);
 
 module.exports = router;

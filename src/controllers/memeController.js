@@ -1,23 +1,22 @@
 const Meme = require('../models/Meme');
 const mongoose = require("mongoose");
 
-// 🔹 Haal alle memes op
+// 🔹 Fetch all memes
 const getAllMemes = async (req, res) => {
     try {
-        const memes = await Meme.find().lean(); // ✅ `lean()` maakt de query sneller
+        const memes = await Meme.find().lean(); // ✅ Using `lean()` for better performance
         res.status(200).json(memes);
     } catch (error) {
-        console.error('[ERROR] ❌ Failed to fetch memes:', error);
         res.status(500).json({ message: 'Failed to fetch memes', error: error.message });
     }
 };
 
-// 🔹 Voeg een nieuwe meme toe
+// 🔹 Create a new meme
 const createMeme = async (req, res) => {
     const { name, url } = req.body;
 
     if (!name || !url) {
-        return res.status(400).json({ message: "Invalid request: name and url are required" });
+        return res.status(400).json({ message: "Invalid request: name and URL are required" });
     }
 
     try {
@@ -31,12 +30,11 @@ const createMeme = async (req, res) => {
 
         res.status(201).json({ message: 'Meme created successfully', meme });
     } catch (error) {
-        console.error('[ERROR] ❌ Failed to create meme:', error);
         res.status(500).json({ message: 'Failed to create meme', error: error.message });
     }
 };
 
-// 🔹 Haal memes op op basis van een lijst van memeIds
+// 🔹 Fetch memes based on a list of meme IDs
 const getMemesByIds = async (req, res) => {
     const { memeIds } = req.body;
 
@@ -45,10 +43,10 @@ const getMemesByIds = async (req, res) => {
     }
 
     try {
-        // 🔥 Converteer memeIds naar Strings en haal alleen de nodige velden op
+        // Convert memeIds to Strings and fetch only the required fields
         const memes = await Meme.find({ memeId: { $in: memeIds.map(String) } })
-            .select("memeId name url") // ✅ Haal alleen de relevante velden op
-            .lean(); // ✅ `lean()` maakt de query sneller
+            .select("memeId name url") // ✅ Fetch only relevant fields
+            .lean(); // ✅ Optimized query with `lean()`
 
         if (memes.length === 0) {
             return res.status(404).json({ message: "No memes found for the provided IDs" });
@@ -56,7 +54,6 @@ const getMemesByIds = async (req, res) => {
 
         res.status(200).json(memes);
     } catch (error) {
-        console.error("[ERROR] ❌ Failed to fetch memes:", error);
         res.status(500).json({ message: "Failed to fetch memes", error: error.message });
     }
 };

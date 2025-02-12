@@ -1,21 +1,21 @@
 const calculateProgressAndBoost = (memes, votes) => {
-    // ✅ 1️⃣ Stemmen tellen per meme
+    // ✅ 1️⃣ Count votes per meme
     const voteCounts = {};
     votes.forEach(vote => {
         const memeId = vote.memeId.toString();
         voteCounts[memeId] = (voteCounts[memeId] || 0) + 1;
     });
 
-    // ✅ 2️⃣ Sorteer memes op aantal stemmen (backing)
+    // ✅ 2️⃣ Sort memes based on vote count (higher votes first)
     const sortedMemes = [...memes].sort((a, b) => 
         (voteCounts[b.memeId.toString()] || 0) - (voteCounts[a.memeId.toString()] || 0)
     );
 
-    // ✅ 3️⃣ Bepaal de boost-verdeling
+    // ✅ 3️⃣ Define boost percentages for the top 3 memes
     const boostRanges = {
-        1: [35, 50], // 🥇 Nummer 1 krijgt 35 - 50% boost van 100
-        2: [15, 25], // 🥈 Nummer 2 krijgt 15 - 25% boost van 100
-        3: [5, 10]   // 🥉 Nummer 3 krijgt 5 - 10% boost van 100
+        1: [35, 50], // 🥇 Rank 1 gets a 35% - 50% boost
+        2: [15, 25], // 🥈 Rank 2 gets a 15% - 25% boost
+        3: [5, 10]   // 🥉 Rank 3 gets a 5% - 10% boost
     };
 
     const roundLog = {
@@ -25,26 +25,26 @@ const calculateProgressAndBoost = (memes, votes) => {
     };
 
     const updatedMemes = sortedMemes.map((meme, index) => {
-        // ✅ Willekeurige basisprogressie (50 - 100)
+        // ✅ Random base progress (50 - 100)
         const baseProgress = Math.floor(Math.random() * 51) + 50;
 
         let boosted = false;
         let boostAmount = 0;
 
-        // ✅ 4️⃣ Alleen top 3 memes krijgen een boost
+        // ✅ 4️⃣ Only top 3 memes receive a boost
         if (index < 3 && voteCounts[meme.memeId.toString()] > 0) {
             boosted = true;
-            const [minBoost, maxBoost] = boostRanges[index + 1]; // Haal juiste range op
+            const [minBoost, maxBoost] = boostRanges[index + 1]; // Retrieve the correct boost range
             const boostPercentage = Math.random() * (maxBoost - minBoost) + minBoost;
-            boostAmount = Math.floor((boostPercentage / 100) * 100); // Boost over 100 punten
+            boostAmount = Math.floor((boostPercentage / 100) * 100); // Boost based on 100 points
         }
 
         const totalProgress = baseProgress + boostAmount;
 
-        // ✅ 5️⃣ Log resultaat per meme
+        // ✅ 5️⃣ Log round progress per meme
         roundLog.progress.push({
             memeId: meme.memeId,
-            progress: totalProgress, // ✅ Zorgt ervoor dat progress ALTIJD correct wordt opgeslagen
+            progress: totalProgress, 
             baseProgress,
             boosted,
             boostAmount
@@ -55,21 +55,17 @@ const calculateProgressAndBoost = (memes, votes) => {
             votes: voteCounts[meme.memeId.toString()] || 0
         });
 
-        console.log(`✅ Meme ${meme.memeId}: baseProgress=${baseProgress}, boost=${boostAmount}, totalProgress=${totalProgress}`);
-
         return {
             ...meme,
-            progress: (meme.progress || 0) + totalProgress // ✅ Voorkomt dat progress `undefined` is
+            progress: (meme.progress || 0) + totalProgress // ✅ Ensures progress is never undefined
         };
     });
 
-    // ✅ 6️⃣ Bepaal de winnaar van deze ronde (hoogste totale progressie)
+    // ✅ 6️⃣ Determine the round winner (highest progress)
     const roundWinner = roundLog.progress.reduce((max, item) => 
         item.progress > max.progress ? item : max, { memeId: null, progress: 0 }
     );
     roundLog.winner = roundWinner.memeId;
-
-    console.log("✅ Round Log:", JSON.stringify(roundLog, null, 2));
 
     return { updatedMemes, roundLog };
 };

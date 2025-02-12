@@ -1,40 +1,40 @@
 const Winner = require("../models/Winner");
 const Race = require("../models/Race");
 const Vote = require("../models/Vote");
-const { getIo, sendWinnerUpdate } = require("../socket"); // ✅ Correcte WebSocket import
+const { getIo, sendWinnerUpdate } = require("../socket"); // ✅ Correct WebSocket import
 
 /**
- * ✅ Sla de winnaar op zodra de race is afgesloten
+ * ✅ Save the winner once the race is closed.
  */
 const saveWinner = async (raceId) => {
     try {
         const race = await Race.findOne({ raceId });
 
         if (!race) {
-            console.warn(`[WARNING] ❌ Race ${raceId} niet gevonden.`);
+            console.warn(`[WARNING] Race ${raceId} not found.`);
             return;
         }
 
         if (race.status !== "closed") {
-            console.warn(`[WARNING] 🚧 Race ${raceId} is nog niet gesloten.`);
+            console.warn(`[WARNING] Race ${raceId} is not closed yet.`);
             return;
         }
 
-        console.log(`[INFO] 🏆 Race ${raceId} is gesloten, winnaar bepalen...`);
+        console.log(`[INFO] Determining winner for race ${raceId}...`);
 
-        // ✅ Race als gesloten opslaan
+        // ✅ Mark the race as closed
         await Race.findOneAndUpdate({ raceId }, { status: "closed" });
 
-        // ✅ Verstuur raceClosed event **VÓÓR** de winnaar wordt opgeslagen
+        // ✅ Emit raceClosed event **BEFORE** saving the winner
         const io = getIo();
         io.emit("raceClosed", { raceId, status: "closed" });
-        console.log(`[SOCKET] 🔴 raceClosed event verstuurd voor ${raceId}`);
 
-        // ✅ Winnaar bepalen
+        // ✅ Determine the winning meme
         const winningMeme = race.memes.reduce((max, meme) =>
             meme.progress > max.progress ? meme : max
         );
 
+        // ✅ Save the winner
         const winner = new Winner({
             raceId: race.raceId,
             memeId: winningMeme.memeId,
@@ -43,40 +43,34 @@ const saveWinner = async (raceId) => {
         });
 
         await winner.save();
-        console.log(`[SUCCESS] 🏆 Winnaar opgeslagen: ${winningMeme.memeId}`);
 
-        // ✅ 500ms delay voor WebSocket-update
+        // ✅ Emit winnerUpdate via WebSocket with a small delay to ensure data consistency
         setTimeout(() => {
             io.emit("winnerUpdate", winner);
-            console.log(`[SOCKET] 🏆 winnerUpdate event verstuurd voor ${raceId}`);
         }, 500);
 
         return winner;
     } catch (error) {
-        console.error(`[ERROR] ❌ Failed to save winner:`, error);
+        console.error(`[ERROR] Failed to save winner:`, error);
         throw error;
     }
 };
 
 /**
- * ✅ Haal de winnaar op voor een race
+ * ✅ Retrieve the winner for a specific race.
  */
 const getWinnerByRaceId = async (raceId) => {
     try {
-        console.log(`[INFO] 🏆 Opvragen winnaar voor race ${raceId}`);
-
-        // ✅ Haal winnaar op en vul meme-informatie aan
+        // ✅ Fetch the winner and populate meme details
         const winner = await Winner.findOne({ raceId }).populate("memeId");
 
         if (!winner) {
-            console.warn(`[WARNING] ❌ Geen winnaar gevonden voor race ${raceId}`);
             return null;
         }
 
-        console.log(`[SUCCESS] 🏆 Winnaar gevonden:`, winner);
         return winner;
     } catch (error) {
-        console.error(`[ERROR] ❌ Fout bij ophalen winnaar:`, error);
+        console.error(`[ERROR] Failed to fetch winner:`, error);
         throw error;
     }
 };
