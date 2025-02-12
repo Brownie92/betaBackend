@@ -1,6 +1,6 @@
-const { Server } = require('socket.io');
+const { Server } = require("socket.io");
 
-let io = null; // WebSocket instantie
+let io = null; // ✅ WebSocket instantie
 
 const initSocket = (server) => {
     if (!server) {
@@ -11,20 +11,26 @@ const initSocket = (server) => {
     io = new Server(server, {
         cors: {
             origin: "*", // ⚠️ Beperken in productie!
-            methods: ["GET", "POST"]
-        }
+            methods: ["GET", "POST"],
+        },
     });
 
     io.on("connection", (socket) => {
-        console.log(`[SOCKET] 🟢 New client connected: ${socket.id}`);
+        console.log(`[SOCKET] 🟢 Nieuwe client verbonden: ${socket.id}`);
 
         socket.on("disconnect", () => {
             console.log(`[SOCKET] 🔴 Client disconnected: ${socket.id}`);
         });
     });
 
-    
+    return io;
+};
 
+// ✅ **Toegevoegd: Functie om `io` op te halen**
+const getIo = () => {
+    if (!io) {
+        throw new Error("[SOCKET] ❌ WebSocket is niet geïnitialiseerd!");
+    }
     return io;
 };
 
@@ -41,21 +47,17 @@ const sendRaceCreated = (race) => emitEvent("raceCreated", race);
 const sendRaceUpdate = (race) => emitEvent("raceUpdate", race);
 const sendRoundUpdate = (round) => emitEvent("roundUpdate", round);
 const sendWinnerUpdate = (winner) => emitEvent("winnerUpdate", winner);
-const sendVoteUpdate = (raceId) => {
-    if (!io) {
-        console.warn("[SOCKET] ⚠️ WebSocket not initialized, cannot send vote update.");
-        return;
-    }
-    io.emit("voteUpdate", { raceId });
-};
+const sendVoteUpdate = (raceId) => emitEvent("voteUpdate", { raceId });
+const sendRaceClosed = (race) => emitEvent("raceClosed", race);
 
-
-// **Exports**
+// **✅ Exports**
 module.exports = {
     initSocket,
+    getIo, // ✅ Nieuw: Functie om `io` op te halen
     sendRaceCreated,
     sendRaceUpdate,
+    sendRaceClosed,
     sendRoundUpdate,
     sendWinnerUpdate,
-    sendVoteUpdate
+    sendVoteUpdate,
 };

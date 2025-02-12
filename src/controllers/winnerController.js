@@ -1,52 +1,55 @@
-const Winner = require('../models/Winner');
-const Race = require('../models/Race');
-const Vote = require('../models/Vote');
-const { sendWinnerUpdate } = require('../socket');
+const Winner = require("../models/Winner");
+const Race = require("../models/Race");
+const Vote = require("../models/Vote");
+const { getIo, sendWinnerUpdate } = require("../socket"); // ✅ Correcte WebSocket import
 
 /**
- * Sla de winnaar op zodra de race is afgesloten
+ * ✅ Sla de winnaar op zodra de race is afgesloten
  */
 const saveWinner = async (raceId) => {
     try {
         const race = await Race.findOne({ raceId });
 
-        if (!race || race.status !== 'closed') {
+        if (!race) {
+            console.warn(`[WARNING] ❌ Race ${raceId} niet gevonden.`);
             return;
         }
 
-        // ✅ Zoek de winnaar in de race (degene met de hoogste progress)
+        if (race.status !== "closed") {
+            console.warn(`[WARNING] 🚧 Race ${raceId} is nog niet gesloten.`);
+            return;
+        }
+
+        console.log(`[INFO] 🏆 Race ${raceId} is gesloten, winnaar bepalen...`);
+
+        // ✅ Race als gesloten opslaan
+        await Race.findOneAndUpdate({ raceId }, { status: "closed" });
+
+        // ✅ Verstuur raceClosed event **VÓÓR** de winnaar wordt opgeslagen
+        const io = getIo();
+        io.emit("raceClosed", { raceId, status: "closed" });
+        console.log(`[SOCKET] 🔴 raceClosed event verstuurd voor ${raceId}`);
+
+        // ✅ Winnaar bepalen
         const winningMeme = race.memes.reduce((max, meme) =>
             meme.progress > max.progress ? meme : max
         );
 
-        // ✅ Controleer of de winnaar al is opgeslagen
-        const existingWinner = await Winner.findOne({ raceId });
-        if (existingWinner) {
-            return existingWinner;
-        }
-
-        // ✅ Query alle stemmen uit de `Vote` collectie
-        const votesPerMeme = await Vote.aggregate([
-            { $match: { raceId, status: 'processed' } },
-            { $group: { _id: "$memeId", totalVotes: { $sum: 1 } } }
-        ]);
-
-        // ✅ Haal stemmen van de winnaar op
-        const winnerVotes = votesPerMeme.find(v => v._id.toString() === winningMeme.memeId.toString());
-        const totalVotes = winnerVotes ? winnerVotes.totalVotes : 0;
-
-        // ✅ Sla de winnaar op
         const winner = new Winner({
             raceId: race.raceId,
             memeId: winningMeme.memeId,
             progress: winningMeme.progress,
-            votes: totalVotes,
+            votes: 0,
         });
 
         await winner.save();
+        console.log(`[SUCCESS] 🏆 Winnaar opgeslagen: ${winningMeme.memeId}`);
 
-        // ✅ WebSocket event sturen
-        sendWinnerUpdate(winner);
+        // ✅ 500ms delay voor WebSocket-update
+        setTimeout(() => {
+            io.emit("winnerUpdate", winner);
+            console.log(`[SOCKET] 🏆 winnerUpdate event verstuurd voor ${raceId}`);
+        }, 500);
 
         return winner;
     } catch (error) {
@@ -56,7 +59,7 @@ const saveWinner = async (raceId) => {
 };
 
 /**
- * Haal de winnaar op voor een race
+ * ✅ Haal de winnaar op voor een race
  */
 const getWinnerByRaceId = async (raceId) => {
     try {
@@ -70,6 +73,7 @@ const getWinnerByRaceId = async (raceId) => {
             return null;
         }
 
+        console.log(`[SUCCESS] 🏆 Winnaar gevonden:`, winner);
         return winner;
     } catch (error) {
         console.error(`[ERROR] ❌ Fout bij ophalen winnaar:`, error);
